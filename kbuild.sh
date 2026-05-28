@@ -294,8 +294,9 @@ case "${COMMAND}" in
     echo ""
 
     # virtme-ng needs to be run from kernel source directory
+    # Without --exec, vng defaults to interactive mode
     cd "${KERNEL_DIR}"
-    vng --run "${KERNEL_PATH}" ${VIRTME_OPTS} "$@" --shell
+    vng --run "${KERNEL_PATH}" ${VIRTME_OPTS} "$@"
     ;;
 
   "help"|"-h"|"--help")
