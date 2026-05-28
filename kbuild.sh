@@ -259,6 +259,15 @@ case "${COMMAND}" in
 
     # Build virtme-ng command with optional kernel parameters
     VNG_CMD="vng --run ${KERNEL_PATH}"
+
+    # Add architecture if not native
+    HOST_ARCH=$(uname -m)
+    if [ "${TARGET_ARCH}" = "arm64" ] && [ "${HOST_ARCH}" != "aarch64" ]; then
+      VNG_CMD="${VNG_CMD} --arch arm64"
+    elif [ "${TARGET_ARCH}" = "x86_64" ] && [ "${HOST_ARCH}" != "x86_64" ]; then
+      VNG_CMD="${VNG_CMD} --arch amd64"
+    fi
+
     if [ -n "${KERNEL_APPEND}" ]; then
       VNG_CMD="${VNG_CMD} --append \"${KERNEL_APPEND}\""
     fi
@@ -295,6 +304,15 @@ case "${COMMAND}" in
 
     # Build virtme-ng command with optional kernel parameters
     VNG_CMD="vng --run ${KERNEL_PATH}"
+
+    # Add architecture if not native
+    HOST_ARCH=$(uname -m)
+    if [ "${TARGET_ARCH}" = "arm64" ] && [ "${HOST_ARCH}" != "aarch64" ]; then
+      VNG_CMD="${VNG_CMD} --arch arm64"
+    elif [ "${TARGET_ARCH}" = "x86_64" ] && [ "${HOST_ARCH}" != "x86_64" ]; then
+      VNG_CMD="${VNG_CMD} --arch amd64"
+    fi
+
     if [ -n "${KERNEL_APPEND}" ]; then
       VNG_CMD="${VNG_CMD} --append \"${KERNEL_APPEND}\""
     fi
