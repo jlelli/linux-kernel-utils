@@ -187,17 +187,9 @@ case "${COMMAND}" in
     echo "Adding virtme-ng required config options..."
     cd "${KERNEL_DIR}"
 
-    # Step 1: Let vng --kconfig create baseline config in source directory
-    echo "Running vng --kconfig..."
-    vng --kconfig
-
-    # Step 2: Move the generated artifacts to build directory
-    echo "Moving generated config to build directory..."
-    mkdir -p "${BUILD_DIR}/include"
-    mv .config "${BUILD_DIR}/.config"
-    [ -f .config.old ] && mv .config.old "${BUILD_DIR}/.config.old"
-    [ -d include/config ] && mv include/config "${BUILD_DIR}/include/"
-    [ -d include/generated ] && mv include/generated "${BUILD_DIR}/include/"
+    # virtme-ng supports build directories natively via O= parameter
+    echo "Running vng --kconfig O=${BUILD_DIR}..."
+    vng --kconfig O="${BUILD_DIR}"
 
     echo ""
     echo "Config created at ${BUILD_DIR}/.config"
