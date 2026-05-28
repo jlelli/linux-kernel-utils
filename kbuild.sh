@@ -17,6 +17,7 @@ Usage: $0 <command> [args...]
 Commands:
   help            - Show this help message
   defconfig       - Generate default .config if absent
+  vng-config      - Add virtme-ng required config options (use before build)
   menuconfig      - Interactive kernel configuration (ncurses)
   nconfig         - Alternative ncurses-based configuration
   build           - Build kernel with compile_commands.json
@@ -34,9 +35,9 @@ Environment Variables:
   VIRTME_OPTS     - Extra options to pass to virtme-ng (default: empty)
 
 Examples:
-  # Basic usage
+  # Basic usage (for virtme-ng testing)
   $0 defconfig
-  $0 menuconfig
+  $0 vng-config       # Add virtme-ng config options
   $0 build
   $0 run
 
@@ -44,7 +45,7 @@ Examples:
   $0 run-shell
 
   # Run command in VM
-  $0 run -- dmesg
+  $0 run dmesg
 
   # Build for ARM64
   TARGET_ARCH=arm64 $0 build
@@ -163,9 +164,41 @@ case "${COMMAND}" in
       scripts/config --file "${BUILD_DIR}/.config" --enable DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT
       eval ${MAKE} O="${BUILD_DIR}" ARCH=${TARGET_ARCH} olddefconfig
       echo "Config generated at ${BUILD_DIR}/.config"
+      echo ""
+      echo "NOTE: To test with virtme-ng, run: $0 vng-config"
     else
       echo "Config already exists at ${BUILD_DIR}/.config"
     fi
+    ;;
+
+  "vng-config")
+    # Check if virtme-ng is installed
+    if ! command -v vng &> /dev/null; then
+      echo "Error: virtme-ng not found"
+      echo "Install with: pip install virtme-ng"
+      exit 1
+    fi
+
+    echo "Adding virtme-ng required config options..."
+    cd "${KERNEL_DIR}"
+
+    # Step 1: Let vng --kconfig create baseline config in source directory
+    echo "Running vng --kconfig..."
+    vng --kconfig
+
+    # Step 2: Move the generated artifacts to build directory
+    echo "Moving generated config to build directory..."
+    mkdir -p "${BUILD_DIR}/include"
+    mv .config "${BUILD_DIR}/.config"
+    [ -f .config.old ] && mv .config.old "${BUILD_DIR}/.config.old"
+    [ -d include/config ] && mv include/config "${BUILD_DIR}/include/"
+    [ -d include/generated ] && mv include/generated "${BUILD_DIR}/include/"
+
+    echo ""
+    echo "Config created at ${BUILD_DIR}/.config"
+    echo "Next steps:"
+    echo "  1. Run '$0 build' to build the kernel"
+    echo "  2. Run '$0 run' or '$0 run-shell' to test with virtme-ng"
     ;;
 
   "menuconfig")
@@ -228,9 +261,16 @@ case "${COMMAND}" in
     shift
     echo "Running kernel with virtme-ng..."
     echo "Kernel: ${KERNEL_PATH}"
-    echo "Build dir: ${BUILD_DIR}"
     echo ""
-    vng --build-dir "${BUILD_DIR}" ${VIRTME_OPTS} "$@"
+
+    # virtme-ng needs to be run from kernel source directory
+    # Collect extra args to pass after --run and VIRTME_OPTS
+    cd "${KERNEL_DIR}"
+    if [ "$#" -gt 0 ]; then
+      vng --run "${KERNEL_PATH}" ${VIRTME_OPTS} --exec "$*"
+    else
+      vng --run "${KERNEL_PATH}" ${VIRTME_OPTS}
+    fi
     ;;
 
   "run-shell")
@@ -251,9 +291,11 @@ case "${COMMAND}" in
     shift
     echo "Running kernel with virtme-ng (interactive shell)..."
     echo "Kernel: ${KERNEL_PATH}"
-    echo "Build dir: ${BUILD_DIR}"
     echo ""
-    vng --build-dir "${BUILD_DIR}" ${VIRTME_OPTS} "$@" --shell
+
+    # virtme-ng needs to be run from kernel source directory
+    cd "${KERNEL_DIR}"
+    vng --run "${KERNEL_PATH}" ${VIRTME_OPTS} "$@" --shell
     ;;
 
   "help"|"-h"|"--help")

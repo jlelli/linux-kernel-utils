@@ -62,7 +62,7 @@ kb run
 kb run-shell
 
 # Run command in VM
-kb run -- dmesg | grep -i error
+kb run dmesg
 
 # Clean build artifacts
 kb clean
@@ -101,10 +101,7 @@ kb run-shell
 VIRTME_OPTS="--memory 4G --cpus 4" kb run
 
 # Run a specific command in the VM
-kb run -- cat /proc/version
-
-# Pass kernel parameters
-kb run -- loglevel=7 debug
+kb run cat /proc/version
 ```
 
 ## Environment Variables
