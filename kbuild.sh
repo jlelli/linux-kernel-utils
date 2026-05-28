@@ -62,9 +62,6 @@ Examples:
 
   # Permanent customization via local.sh
   Edit: $(dirname "$0")/local.sh
-
-Based on linux-kernel-vscode by Florent Revest
-https://github.com/FlorentRevest/linux-kernel-vscode
 EOF
 }
 
