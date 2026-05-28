@@ -100,6 +100,9 @@ kb run-shell
 # Run with custom memory/CPUs
 VIRTME_OPTS="--memory 4G --cpus 4" kb run
 
+# Pass kernel command line parameters
+KERNEL_APPEND="loglevel=7 debug" kb run
+
 # Run a specific command in the VM
 kb run cat /proc/version
 ```
@@ -114,6 +117,7 @@ Override defaults via environment or `local.sh`:
 - `MAKE` - Make command with flags (default: uses LLVM/Clang with ccache)
 - `SILENT_BUILD_FLAG` - Make verbosity (default: `-s` for silent)
 - `SPINNER` - Show build spinner (default: `1`)
+- `KERNEL_APPEND` - Additional kernel command line parameters (default: empty)
 - `VIRTME_OPTS` - Extra options for virtme-ng (default: empty)
 
 ## Multiple Configs

@@ -31,4 +31,7 @@
 # MAKE="make -j`nproc` CC='ccache gcc'"
 
 ## Customize virtme-ng options
-# VIRTME_OPTS="--memory 4G --cpus 4"
+# VIRTME_OPTS="--verbose --console"
+
+## Add kernel command line parameters by default
+# KERNEL_APPEND="loglevel=7 debug"

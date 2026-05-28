@@ -32,6 +32,7 @@ Environment Variables:
   TARGET_ARCH     - Target architecture (default: x86_64, also: arm64)
   MAKE            - Make command with flags (default: LLVM/Clang with ccache)
   SPINNER         - Show build spinner (default: 1, set to 0 to disable)
+  KERNEL_APPEND   - Additional kernel cmdline parameters (default: empty)
   VIRTME_OPTS     - Extra options to pass to virtme-ng (default: empty)
 
 Examples:
@@ -55,6 +56,9 @@ Examples:
 
   # Run with custom virtme-ng options
   VIRTME_OPTS="--memory 4G --cpus 4" $0 run
+
+  # Pass kernel command line parameters
+  KERNEL_APPEND="loglevel=7 debug" $0 run
 
   # Permanent customization via local.sh
   Edit: $(dirname "$0")/local.sh
@@ -83,6 +87,7 @@ COMMAND=$1
 : ${TARGET_ARCH:="x86_64"}
 : ${SILENT_BUILD_FLAG:="-s"}
 : ${SPINNER:=1}
+: ${KERNEL_APPEND:=""}
 : ${VIRTME_OPTS:=""}
 
 # Let the user override environment variables for their special needs
@@ -263,13 +268,19 @@ case "${COMMAND}" in
     echo "Kernel: ${KERNEL_PATH}"
     echo ""
 
+    # Build virtme-ng command with optional kernel parameters
+    VNG_CMD="vng --run ${KERNEL_PATH}"
+    if [ -n "${KERNEL_APPEND}" ]; then
+      VNG_CMD="${VNG_CMD} --append \"${KERNEL_APPEND}\""
+    fi
+    VNG_CMD="${VNG_CMD} ${VIRTME_OPTS}"
+
     # virtme-ng needs to be run from kernel source directory
-    # Collect extra args to pass after --run and VIRTME_OPTS
     cd "${KERNEL_DIR}"
     if [ "$#" -gt 0 ]; then
-      vng --run "${KERNEL_PATH}" ${VIRTME_OPTS} --exec "$*"
+      eval ${VNG_CMD} --exec \"$*\"
     else
-      vng --run "${KERNEL_PATH}" ${VIRTME_OPTS}
+      eval ${VNG_CMD}
     fi
     ;;
 
@@ -293,10 +304,17 @@ case "${COMMAND}" in
     echo "Kernel: ${KERNEL_PATH}"
     echo ""
 
+    # Build virtme-ng command with optional kernel parameters
+    VNG_CMD="vng --run ${KERNEL_PATH}"
+    if [ -n "${KERNEL_APPEND}" ]; then
+      VNG_CMD="${VNG_CMD} --append \"${KERNEL_APPEND}\""
+    fi
+    VNG_CMD="${VNG_CMD} ${VIRTME_OPTS}"
+
     # virtme-ng needs to be run from kernel source directory
     # Without --exec, vng defaults to interactive mode
     cd "${KERNEL_DIR}"
-    vng --run "${KERNEL_PATH}" ${VIRTME_OPTS} "$@"
+    eval ${VNG_CMD} "$@"
     ;;
 
   "help"|"-h"|"--help")
