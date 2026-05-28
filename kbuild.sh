@@ -7,16 +7,52 @@
 
 set -e
 
+# Help function
+function show_help() {
+  cat <<EOF
+Linux Kernel Build Utilities
+
+Usage: $0 <command> [args...]
+
+Commands:
+  help            - Show this help message
+  defconfig       - Generate default .config if absent
+  menuconfig      - Interactive kernel configuration (ncurses)
+  nconfig         - Alternative ncurses-based configuration
+  build           - Build kernel with compile_commands.json
+  clean           - Clean build artifacts (keeps .config)
+  mrproper        - Deep clean (removes .config too)
+
+Environment Variables:
+  KERNEL_DIR      - Kernel source directory (default: current directory)
+  BUILD_DIR       - Build output directory (default: \${KERNEL_DIR}/build)
+  TARGET_ARCH     - Target architecture (default: x86_64, also: arm64)
+  MAKE            - Make command with flags (default: LLVM/Clang with ccache)
+  SPINNER         - Show build spinner (default: 1, set to 0 to disable)
+
+Examples:
+  # Basic usage
+  $0 defconfig
+  $0 menuconfig
+  $0 build
+
+  # Build for ARM64
+  TARGET_ARCH=arm64 $0 build
+
+  # Use custom build directory
+  BUILD_DIR=build-rt $0 build
+
+  # Permanent customization via local.sh
+  Edit: $(dirname "$0")/local.sh
+
+Based on linux-kernel-vscode by Florent Revest
+https://github.com/FlorentRevest/linux-kernel-vscode
+EOF
+}
+
 # Arguments extraction
 if [ "$#" -lt 1 ]; then
-  echo "Usage: $0 command [args...]"
-  echo "Commands:"
-  echo "  defconfig       - Generate default .config if absent"
-  echo "  menuconfig      - Interactive kernel configuration"
-  echo "  nconfig         - ncurses-based configuration"
-  echo "  build           - Build kernel with compile_commands.json"
-  echo "  clean           - Clean build artifacts"
-  echo "  mrproper        - Deep clean (removes .config too)"
+  show_help
   exit 1
 fi
 COMMAND=$1
@@ -53,6 +89,21 @@ fi
 
 : ${KERNEL_PATH:="${BUILD_DIR}/arch/${TARGET_ARCH}/boot/${VMLINUX}"}
 
+# Handle help command early (before kernel tree check)
+if [[ "${COMMAND}" == "help" ]] || [[ "${COMMAND}" == "-h" ]] || [[ "${COMMAND}" == "--help" ]]; then
+  show_help
+  exit 0
+fi
+
+# Ensure we're in a kernel tree for all other commands
+if [ ! -f "Kbuild" ] && [ ! -f "Makefile" ]; then
+  echo "Error: This doesn't look like a Linux kernel source tree"
+  exit 1
+fi
+
+# Create build directory if needed
+mkdir -p "${BUILD_DIR}"
+
 # Spinner function for long-running commands
 function spinner() {
   local pid=$1
@@ -84,6 +135,11 @@ fi
 mkdir -p "${BUILD_DIR}"
 
 case "${COMMAND}" in
+  "help"|"-h"|"--help")
+    show_help
+    exit 0
+    ;;
+
   "defconfig")
     # Only generate .config if it doesn't already exist
     if [ ! -f ${BUILD_DIR}/.config ]; then
@@ -140,9 +196,13 @@ case "${COMMAND}" in
     echo "Deep clean complete (config removed)"
     ;;
 
+  "help"|"-h"|"--help")
+    # Already handled above
+    ;;
+
   *)
     echo "Invalid command: ${COMMAND}"
-    echo "Run '$0' without arguments to see available commands"
+    echo "Run '$0 help' to see available commands"
     exit 1
     ;;
 esac
