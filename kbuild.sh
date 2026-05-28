@@ -20,6 +20,8 @@ Commands:
   menuconfig      - Interactive kernel configuration (ncurses)
   nconfig         - Alternative ncurses-based configuration
   build           - Build kernel with compile_commands.json
+  run             - Run built kernel in VM with virtme-ng
+  run-shell       - Run built kernel and drop to interactive shell
   clean           - Clean build artifacts (keeps .config)
   mrproper        - Deep clean (removes .config too)
 
@@ -29,18 +31,29 @@ Environment Variables:
   TARGET_ARCH     - Target architecture (default: x86_64, also: arm64)
   MAKE            - Make command with flags (default: LLVM/Clang with ccache)
   SPINNER         - Show build spinner (default: 1, set to 0 to disable)
+  VIRTME_OPTS     - Extra options to pass to virtme-ng (default: empty)
 
 Examples:
   # Basic usage
   $0 defconfig
   $0 menuconfig
   $0 build
+  $0 run
+
+  # Interactive shell in VM
+  $0 run-shell
+
+  # Run command in VM
+  $0 run -- dmesg
 
   # Build for ARM64
   TARGET_ARCH=arm64 $0 build
 
   # Use custom build directory
   BUILD_DIR=build-rt $0 build
+
+  # Run with custom virtme-ng options
+  VIRTME_OPTS="--memory 4G --cpus 4" $0 run
 
   # Permanent customization via local.sh
   Edit: $(dirname "$0")/local.sh
@@ -69,6 +82,7 @@ COMMAND=$1
 : ${TARGET_ARCH:="x86_64"}
 : ${SILENT_BUILD_FLAG:="-s"}
 : ${SPINNER:=1}
+: ${VIRTME_OPTS:=""}
 
 # Let the user override environment variables for their special needs
 if [ -f "${SCRIPT_DIR}/local.sh" ]; then
@@ -194,6 +208,52 @@ case "${COMMAND}" in
   "mrproper")
     eval ${MAKE} O="${BUILD_DIR}" ARCH=${TARGET_ARCH} mrproper
     echo "Deep clean complete (config removed)"
+    ;;
+
+  "run")
+    # Ensure kernel is built
+    if [ ! -f ${KERNEL_PATH} ]; then
+      echo "Kernel not found at ${KERNEL_PATH}"
+      echo "Run '$0 build' first"
+      exit 1
+    fi
+
+    # Check if virtme-ng is installed
+    if ! command -v vng &> /dev/null; then
+      echo "Error: virtme-ng not found"
+      echo "Install with: pip install virtme-ng"
+      exit 1
+    fi
+
+    shift
+    echo "Running kernel with virtme-ng..."
+    echo "Kernel: ${KERNEL_PATH}"
+    echo "Build dir: ${BUILD_DIR}"
+    echo ""
+    vng --build-dir "${BUILD_DIR}" ${VIRTME_OPTS} "$@"
+    ;;
+
+  "run-shell")
+    # Ensure kernel is built
+    if [ ! -f ${KERNEL_PATH} ]; then
+      echo "Kernel not found at ${KERNEL_PATH}"
+      echo "Run '$0 build' first"
+      exit 1
+    fi
+
+    # Check if virtme-ng is installed
+    if ! command -v vng &> /dev/null; then
+      echo "Error: virtme-ng not found"
+      echo "Install with: pip install virtme-ng"
+      exit 1
+    fi
+
+    shift
+    echo "Running kernel with virtme-ng (interactive shell)..."
+    echo "Kernel: ${KERNEL_PATH}"
+    echo "Build dir: ${BUILD_DIR}"
+    echo ""
+    vng --build-dir "${BUILD_DIR}" ${VIRTME_OPTS} "$@" --shell
     ;;
 
   "help"|"-h"|"--help")

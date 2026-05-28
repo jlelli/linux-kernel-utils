@@ -29,3 +29,6 @@
 
 ## Use GCC instead of LLVM
 # MAKE="make -j`nproc` CC='ccache gcc'"
+
+## Customize virtme-ng options
+# VIRTME_OPTS="--memory 4G --cpus 4"

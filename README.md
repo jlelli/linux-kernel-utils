@@ -21,6 +21,7 @@ The original project provides a comprehensive VSCode-based kernel development en
 
 - Configure kernel with `defconfig`, `menuconfig`, or `nconfig`
 - Build kernel in separate `build/` directory
+- Run kernel in VM with virtme-ng (no rootfs needed!)
 - LLVM/Clang build by default with ccache support
 - Generates `compile_commands.json` for LSP/clangd
 - Cross-compilation support (x86_64, arm64)
@@ -29,8 +30,12 @@ The original project provides a comprehensive VSCode-based kernel development en
 ## Prerequisites
 
 ```bash
+# Build dependencies
 sudo apt install ccache clang clangd llvm lld libssl-dev libelf-dev \
                  bison flex yacc bc
+
+# To run kernels in VM (optional)
+pip install virtme-ng
 ```
 
 ## Usage
@@ -49,6 +54,15 @@ kb menuconfig
 
 # Build kernel
 kb build
+
+# Run kernel in VM with virtme-ng
+kb run
+
+# Run kernel and drop to interactive shell
+kb run-shell
+
+# Run command in VM
+kb run -- dmesg | grep -i error
 
 # Clean build artifacts
 kb clean
@@ -72,6 +86,27 @@ BUILD_DIR="${KERNEL_DIR}/build-rt"
 MAKE="make -j$(nproc) CC='ccache gcc'"
 ```
 
+## Running Kernels with virtme-ng
+
+virtme-ng makes it easy to test your kernel without creating VM images:
+
+```bash
+# Run kernel (uses host rootfs)
+kb run
+
+# Interactive shell
+kb run-shell
+
+# Run with custom memory/CPUs
+VIRTME_OPTS="--memory 4G --cpus 4" kb run
+
+# Run a specific command in the VM
+kb run -- cat /proc/version
+
+# Pass kernel parameters
+kb run -- loglevel=7 debug
+```
+
 ## Environment Variables
 
 Override defaults via environment or `local.sh`:
@@ -82,6 +117,7 @@ Override defaults via environment or `local.sh`:
 - `MAKE` - Make command with flags (default: uses LLVM/Clang with ccache)
 - `SILENT_BUILD_FLAG` - Make verbosity (default: `-s` for silent)
 - `SPINNER` - Show build spinner (default: `1`)
+- `VIRTME_OPTS` - Extra options for virtme-ng (default: empty)
 
 ## Multiple Configs
 
@@ -90,14 +126,17 @@ Use different build directories for different configs:
 ```bash
 # Regular config
 BUILD_DIR=build kb build
+BUILD_DIR=build kb run
 
 # RT config
 BUILD_DIR=build-rt kb defconfig
 BUILD_DIR=build-rt kb menuconfig
 BUILD_DIR=build-rt kb build
+BUILD_DIR=build-rt kb run-shell
 
 # Debug config
 BUILD_DIR=build-debug kb build
+BUILD_DIR=build-debug kb run
 ```
 
 ## Output
