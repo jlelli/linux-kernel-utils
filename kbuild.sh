@@ -33,6 +33,7 @@ Environment Variables:
   MAKE            - Make command with flags (default: LLVM/Clang with ccache)
   SPINNER         - Show build spinner (default: 1, set to 0 to disable)
   KERNEL_APPEND   - Additional kernel cmdline parameters (default: empty)
+  VIRTME_ROOT     - Path to chroot for cross-arch (default: auto-created)
   VIRTME_OPTS     - Extra options to pass to virtme-ng (default: empty)
 
 Examples:
@@ -85,6 +86,7 @@ COMMAND=$1
 : ${SILENT_BUILD_FLAG:="-s"}
 : ${SPINNER:=1}
 : ${KERNEL_APPEND:=""}
+: ${VIRTME_ROOT:=""}
 : ${VIRTME_OPTS:=""}
 
 # Let the user override environment variables for their special needs
@@ -260,12 +262,28 @@ case "${COMMAND}" in
     # Build virtme-ng command with optional kernel parameters
     VNG_CMD="vng --run ${KERNEL_PATH}"
 
-    # Add architecture if not native
+    # Add architecture if not native (requires --root for cross-arch)
     HOST_ARCH=$(uname -m)
     if [ "${TARGET_ARCH}" = "arm64" ] && [ "${HOST_ARCH}" != "aarch64" ]; then
       VNG_CMD="${VNG_CMD} --arch arm64"
+      if [ -n "${VIRTME_ROOT}" ]; then
+        VNG_CMD="${VNG_CMD} --root ${VIRTME_ROOT}"
+      else
+        # Auto-create chroot in ~/.cache/virtme-ng/
+        DEFAULT_ROOT="${HOME}/.cache/virtme-ng/arm64-chroot"
+        mkdir -p "${DEFAULT_ROOT}"
+        VNG_CMD="${VNG_CMD} --root ${DEFAULT_ROOT} --root-release noble"
+      fi
     elif [ "${TARGET_ARCH}" = "x86_64" ] && [ "${HOST_ARCH}" != "x86_64" ]; then
       VNG_CMD="${VNG_CMD} --arch amd64"
+      if [ -n "${VIRTME_ROOT}" ]; then
+        VNG_CMD="${VNG_CMD} --root ${VIRTME_ROOT}"
+      else
+        # Auto-create chroot in ~/.cache/virtme-ng/
+        DEFAULT_ROOT="${HOME}/.cache/virtme-ng/amd64-chroot"
+        mkdir -p "${DEFAULT_ROOT}"
+        VNG_CMD="${VNG_CMD} --root ${DEFAULT_ROOT} --root-release noble"
+      fi
     fi
 
     if [ -n "${KERNEL_APPEND}" ]; then
@@ -305,12 +323,28 @@ case "${COMMAND}" in
     # Build virtme-ng command with optional kernel parameters
     VNG_CMD="vng --run ${KERNEL_PATH}"
 
-    # Add architecture if not native
+    # Add architecture if not native (requires --root for cross-arch)
     HOST_ARCH=$(uname -m)
     if [ "${TARGET_ARCH}" = "arm64" ] && [ "${HOST_ARCH}" != "aarch64" ]; then
       VNG_CMD="${VNG_CMD} --arch arm64"
+      if [ -n "${VIRTME_ROOT}" ]; then
+        VNG_CMD="${VNG_CMD} --root ${VIRTME_ROOT}"
+      else
+        # Auto-create chroot in ~/.cache/virtme-ng/
+        DEFAULT_ROOT="${HOME}/.cache/virtme-ng/arm64-chroot"
+        mkdir -p "${DEFAULT_ROOT}"
+        VNG_CMD="${VNG_CMD} --root ${DEFAULT_ROOT} --root-release noble"
+      fi
     elif [ "${TARGET_ARCH}" = "x86_64" ] && [ "${HOST_ARCH}" != "x86_64" ]; then
       VNG_CMD="${VNG_CMD} --arch amd64"
+      if [ -n "${VIRTME_ROOT}" ]; then
+        VNG_CMD="${VNG_CMD} --root ${VIRTME_ROOT}"
+      else
+        # Auto-create chroot in ~/.cache/virtme-ng/
+        DEFAULT_ROOT="${HOME}/.cache/virtme-ng/amd64-chroot"
+        mkdir -p "${DEFAULT_ROOT}"
+        VNG_CMD="${VNG_CMD} --root ${DEFAULT_ROOT} --root-release noble"
+      fi
     fi
 
     if [ -n "${KERNEL_APPEND}" ]; then
