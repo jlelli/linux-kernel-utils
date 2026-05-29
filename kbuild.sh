@@ -186,9 +186,16 @@ case "${COMMAND}" in
     echo "Adding virtme-ng required config options..."
     cd "${KERNEL_DIR}"
 
-    # virtme-ng supports build directories natively via O= parameter
-    echo "Running vng --kconfig O=${BUILD_DIR}..."
-    vng --kconfig O="${BUILD_DIR}"
+    # Build vng --kconfig command with architecture if needed
+    VNG_KCONFIG_CMD="vng --kconfig O=\"${BUILD_DIR}\""
+
+    # Add architecture for ARM64
+    if [ "${TARGET_ARCH}" = "arm64" ]; then
+      VNG_KCONFIG_CMD="${VNG_KCONFIG_CMD} --arch arm64"
+    fi
+
+    echo "Running ${VNG_KCONFIG_CMD}..."
+    eval ${VNG_KCONFIG_CMD}
 
     echo ""
     echo "Config created at ${BUILD_DIR}/.config"
