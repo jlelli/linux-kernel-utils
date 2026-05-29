@@ -29,10 +29,23 @@ The original project provides a comprehensive VSCode-based kernel development en
 
 ## Prerequisites
 
+### Debian/Ubuntu
+
 ```bash
 # Build dependencies
 sudo apt install ccache clang clangd llvm lld libssl-dev libelf-dev \
                  bison flex yacc bc
+
+# To run kernels in VM (optional)
+pip install virtme-ng
+```
+
+### Fedora
+
+```bash
+# Build dependencies
+sudo dnf install ccache clang clang-tools-extra llvm lld openssl-devel \
+                 elfutils-libelf-devel bison flex bc
 
 # To run kernels in VM (optional)
 pip install virtme-ng
