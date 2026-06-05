@@ -267,7 +267,7 @@ case "${COMMAND}" in
     echo ""
 
     # Build virtme-ng command with optional kernel parameters
-    VNG_CMD="vng --run ${KERNEL_PATH}"
+    VNG_CMD="vng --run ${KERNEL_PATH} --user root"
 
     # Add architecture if not native (requires --root for cross-arch)
     HOST_ARCH=$(uname -m)
@@ -328,7 +328,7 @@ case "${COMMAND}" in
     echo ""
 
     # Build virtme-ng command with optional kernel parameters
-    VNG_CMD="vng --run ${KERNEL_PATH}"
+    VNG_CMD="vng --run ${KERNEL_PATH} --user root"
 
     # Add architecture if not native (requires --root for cross-arch)
     HOST_ARCH=$(uname -m)
