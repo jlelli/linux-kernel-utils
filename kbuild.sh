@@ -231,8 +231,62 @@ case "${COMMAND}" in
     # Generate not only the kernel but also the clangd config
     CMD="${MAKE} O=\"${BUILD_DIR}\" ${SILENT_BUILD_FLAG} ARCH=${TARGET_ARCH} all compile_commands.json"
     echo ${CMD}
+
+    # Flag to prevent re-entry into cleanup
+    BUILD_CLEANUP_DONE=0
+
+    # Function to kill build and all child processes
+    cleanup_build() {
+      # Prevent re-entry
+      if [ ${BUILD_CLEANUP_DONE} -eq 1 ]; then
+        return
+      fi
+      BUILD_CLEANUP_DONE=1
+
+      # Restore cursor (in case spinner hid it)
+      tput cnorm 2>/dev/null
+
+      echo ""
+      echo "Stopping build..."
+
+      # Disable further traps to avoid recursion
+      trap - INT TERM
+
+      # Kill the build process and all its children
+      if [ -n "${BUILD_PID}" ] && kill -0 ${BUILD_PID} 2>/dev/null; then
+        # Kill the entire process tree
+        kill -TERM ${BUILD_PID} 2>/dev/null
+        pkill -TERM -P ${BUILD_PID} 2>/dev/null
+
+        # Wait briefly for graceful termination
+        sleep 0.2
+
+        # Force kill if still alive
+        if kill -0 ${BUILD_PID} 2>/dev/null; then
+          kill -KILL ${BUILD_PID} 2>/dev/null
+          pkill -KILL -P ${BUILD_PID} 2>/dev/null
+        fi
+      fi
+
+      exit 130
+    }
+
+    # Set up signal handler to properly kill build on Ctrl+C
+    trap cleanup_build INT TERM
+
     eval ${CMD} &
-    spinner $!
+    BUILD_PID=$!
+
+    spinner ${BUILD_PID}
+    BUILD_EXIT=$?
+
+    # Clear the trap
+    trap - INT TERM
+
+    if [ ${BUILD_EXIT} -ne 0 ]; then
+      echo "Build failed with exit code ${BUILD_EXIT}"
+      exit ${BUILD_EXIT}
+    fi
 
     echo "Build complete: ${KERNEL_PATH}"
     ;;
